@@ -1,7 +1,7 @@
 {
-  "name": "PWA Test Site",
-  "short_name": "PWA Test",
-  "description": "Alerts, from Entity Tracker",
+  "name": "Test",
+  "short_name": "Test",
+  "description": "",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
