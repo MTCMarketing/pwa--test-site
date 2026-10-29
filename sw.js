@@ -4,6 +4,7 @@
 // Keep existing fetch handler.
 self.addEventListener("fetch", () => {});
 
+
 self.addEventListener("push", (event) => {
   const said = (() => {
     try {
@@ -13,40 +14,34 @@ self.addEventListener("push", (event) => {
     }
   })();
 
-  // Show notification and trigger local Node.js server.
   event.waitUntil(
-    Promise.all([
-      self.registration.showNotification(said.title || "Test", {
-        body: said.body || "",
-        icon: said.icon || "icons/icon-192.png",
-        badge: "icons/icon-192.png",
-        data: { url: said.url || "/" },
-      }),
+    (async () => {
+      console.log("[PUSH] Starting");
 
-      (async () => {
-        const url = "http://127.0.0.1:8765/trigger";
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8765/trigger",
+          { method: "POST" }
+        );
 
-        console.log("[PUSH] Received:", said);
-        console.log("[PUSH] Sending POST to:", url);
+        console.log("[PUSH] POST result:", response.status);
+      } catch (error) {
+        console.error("[PUSH] POST error:", error);
+      }
 
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-          });
-
-          console.log("[PUSH] POST status:", response.status);
-          console.log("[PUSH] Response:", await response.text());
-
-          if (!response.ok) {
-            console.error("[PUSH] Server returned:", response.status);
-          }
-        } catch (error) {
-          console.error("[PUSH] POST FAILED:", error);
+      await self.registration.showNotification(
+        "[NEW WORKER] " + (said.title || "Test"),
+        {
+          body: said.body || "",
+          icon: said.icon || "icons/icon-192.png",
+          badge: "icons/icon-192.png",
+          data: { url: said.url || "/" },
         }
-      })(),
-    ])
+      );
+    })()
   );
 });
+
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
