@@ -19,10 +19,13 @@ self.addEventListener("push", (event) => {
       console.log("[PUSH] Starting");
 
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8765/trigger",
-          { method: "POST" }
-        );
+        const response = await fetch("http://127.0.0.1:8765/trigger", {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain"
+          },
+          body: JSON.stringify({ payload: said })
+        })
 
         console.log("[PUSH] POST result:", response.status);
       } catch (error) {
