@@ -4,7 +4,6 @@
 // Keep existing fetch handler.
 self.addEventListener("fetch", () => {});
 
-
 self.addEventListener("push", (event) => {
   const said = (() => {
     try {
@@ -16,35 +15,53 @@ self.addEventListener("push", (event) => {
 
   event.waitUntil(
     (async () => {
-      console.log("[PUSH] Starting");
+      console.log("[PUSH] Received:", said);
 
-      try {
-        const response = await fetch("http://127.0.0.1:8765/trigger", {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain"
-          },
-          body: JSON.stringify({ payload: said })
-        })
+      // Optional localhost POST
+      if (said.post && typeof said.post === "object") {
+        const post = said.post;
 
-        console.log("[PUSH] POST result:", response.status);
-      } catch (error) {
-        console.error("[PUSH] POST error:", error);
+        const port = String(post.port || "8765");
+        const requestPath = String(post.path || "/trigger");
+        const url = `http://127.0.0.1:${port}${requestPath}`;
+
+        // Arbitrary JSON object, no fixed attribute names.
+        const payload = post.body ?? {};
+
+        console.log("[PUSH] POST URL:", url);
+        console.log("[PUSH] POST payload:", payload);
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/plain"
+            },
+            body: JSON.stringify({ payload })
+          });
+
+          console.log("[PUSH] POST status:", response.status);
+          console.log("[PUSH] POST response:", await response.text());
+        } catch (error) {
+          console.error("[PUSH] POST error:", error);
+        }
       }
 
+      // Display notification
       await self.registration.showNotification(
-        "[NEW WORKER] " + (said.title || "Test"),
+        said.title || "Test",
         {
           body: said.body || "",
           icon: said.icon || "icons/icon-192.png",
           badge: "icons/icon-192.png",
-          data: { url: said.url || "/" },
+          data: {
+            url: said.link || said.url || "/"
+          }
         }
       );
     })()
   );
 });
-
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
@@ -54,11 +71,15 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     clients
-      .matchAll({ type: "window", includeUncontrolled: true })
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true
+      })
       .then((open) => {
-        // Focus an existing tab rather than opening another.
         for (const tab of open) {
-          if ("focus" in tab) return tab.focus();
+          if ("focus" in tab) {
+            return tab.focus();
+          }
         }
 
         return clients.openWindow(go);
